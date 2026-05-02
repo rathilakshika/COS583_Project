@@ -5,6 +5,7 @@ from qiskit.quantum_info import Statevector
 
 from Compilation.shor_steane_encoding import (
     STEANE_BLOCK_SIZE,
+    STEANE_LOGICAL_Z_MEASUREMENT_INDICES,
     append_steane_logical_cnot,
     append_steane_logical_h,
     append_steane_logical_s,
@@ -26,6 +27,14 @@ from Compilation.shor_steane_encoding import (
 
 
 class ShorSteaneEncodingTest(unittest.TestCase):
+    def _magic_measure_bits(self, rest: ClassicalRegister, logical: ClassicalRegister) -> list:
+        rest_iter = iter(rest)
+        logical_iter = iter(logical)
+        return [
+            next(logical_iter) if index in STEANE_LOGICAL_Z_MEASUREMENT_INDICES else next(rest_iter)
+            for index in range(STEANE_BLOCK_SIZE)
+        ]
+
     def _count_operations_recursive(self, circuit: QuantumCircuit, operation_name: str) -> int:
         total = 0
         for instruction in circuit.data:
@@ -383,12 +392,31 @@ class ShorSteaneEncodingTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 build_steane_magic_factory(output_kind="surface")
 
+    def test_magic_injection_logical_measurement_support_matches_steane_code(self) -> None:
+        stabilizers = (
+            {1, 3, 4, 6},
+            {0, 3, 5, 6},
+            {2, 4, 5, 6},
+        )
+        support = set(STEANE_LOGICAL_Z_MEASUREMENT_INDICES)
+        stabilizer_span = set()
+        for mask in range(1 << len(stabilizers)):
+            combined = set()
+            for index, stabilizer in enumerate(stabilizers):
+                if mask & (1 << index):
+                    combined ^= stabilizer
+            stabilizer_span.add(tuple(sorted(combined)))
+
+        self.assertEqual(len(support), 3)
+        self.assertTrue(all(len(support & stabilizer) % 2 == 0 for stabilizer in stabilizers))
+        self.assertNotIn(tuple(sorted(support)), stabilizer_span)
+
     def test_magic_injection_measures_magic_block_and_conditionally_corrects_t(self) -> None:
         data = QuantumRegister(STEANE_BLOCK_SIZE, "data")
         magic = QuantumRegister(STEANE_BLOCK_SIZE, "magic")
         magic_measure_rest = ClassicalRegister(STEANE_BLOCK_SIZE - 3, "magic_measure_rest")
         magic_measure = ClassicalRegister(3, "magic_measure")
-        measure_bits = [*magic_measure_rest, *magic_measure]
+        measure_bits = self._magic_measure_bits(magic_measure_rest, magic_measure)
         circuit = QuantumCircuit(data, magic, magic_measure_rest, magic_measure)
 
         returned_circuit = append_steane_magic_injection(circuit, data, magic, measure_bits, gate="t")
@@ -423,7 +451,15 @@ class ShorSteaneEncodingTest(unittest.TestCase):
         ]
         self.assertEqual(
             measure_pairs,
-            [(STEANE_BLOCK_SIZE + index, index) for index in range(STEANE_BLOCK_SIZE)],
+            [
+                (STEANE_BLOCK_SIZE + 0, 0),
+                (STEANE_BLOCK_SIZE + 1, 4),
+                (STEANE_BLOCK_SIZE + 2, 1),
+                (STEANE_BLOCK_SIZE + 3, 2),
+                (STEANE_BLOCK_SIZE + 4, 3),
+                (STEANE_BLOCK_SIZE + 5, 5),
+                (STEANE_BLOCK_SIZE + 6, 6),
+            ],
         )
 
     def test_magic_injection_tdg_uses_s_correction_and_wrappers_delegate(self) -> None:
@@ -431,7 +467,7 @@ class ShorSteaneEncodingTest(unittest.TestCase):
         magic = QuantumRegister(STEANE_BLOCK_SIZE, "magic")
         magic_measure_rest = ClassicalRegister(STEANE_BLOCK_SIZE - 3, "magic_measure_rest")
         magic_measure = ClassicalRegister(3, "magic_measure")
-        measure_bits = [*magic_measure_rest, *magic_measure]
+        measure_bits = self._magic_measure_bits(magic_measure_rest, magic_measure)
         circuit = QuantumCircuit(data, magic, magic_measure_rest, magic_measure)
 
         append_steane_logical_t(circuit, data, magic, measure_bits)

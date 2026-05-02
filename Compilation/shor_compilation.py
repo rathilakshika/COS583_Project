@@ -1036,6 +1036,11 @@ def compile_quantinuum_native(
         "backend_data_source": backend_data_source,
         "target_nominal_qubits": H2.n_qubits,
         "target_nominal_classical_registers": H2.n_cl_reg,
+        "qubit_capacity_assumption": (
+            "Hypothetical H2-native target with enough physical qubits for the full circuit; "
+            "native gates and timing use H2-style target data, but the nominal device qubit "
+            "limit is not treated as a runnable-hardware constraint."
+        ),
         "source_exceeds_target_nominal_qubits": source_circuit.num_qubits > H2.n_qubits,
         "source_tket_commands": len(tk_circuit.get_commands()),
         "compiled_tket_commands": len(compiled_tk_circuit.get_commands()),
@@ -1334,6 +1339,11 @@ def resource_summary(
         "backend_data_source": compilation_result["backend_data_source"],
         "target_nominal_qubits": target_data.n_qubits,
         "target_nominal_classical_registers": target_data.n_cl_reg,
+        "qubit_capacity_assumption": (
+            "Hypothetical H2-native target with enough physical qubits for the full circuit; "
+            "native gates and timing use H2-style target data, but the nominal device qubit "
+            "limit is not treated as a runnable-hardware constraint."
+        ),
         "compiled_exceeds_target_nominal_qubits": compiled_tk_circuit.n_qubits
         > target_data.n_qubits,
         "source_qubits": source_circuit.num_qubits,

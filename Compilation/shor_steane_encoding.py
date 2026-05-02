@@ -42,9 +42,11 @@ STEANE_SYNDROME_DATA_QUBITS = (
     (0, 3, 5, 6),
     (2, 4, 5, 6),
 )
+STEANE_LOGICAL_Z_MEASUREMENT_INDICES = (1, 5, 6)
 
 __all__ = [
     "STEANE_BLOCK_SIZE",
+    "STEANE_LOGICAL_Z_MEASUREMENT_INDICES",
     "append_steane_logical_cnot",
     "append_steane_logical_h",
     "append_steane_logical_s",
@@ -454,10 +456,12 @@ def append_steane_magic_injection(
     for qubit, bit in zip(magic, bits, strict=True):
         circuit.measure(qubit, bit)
 
+    logical_measurement_bits = [bits[index] for index in STEANE_LOGICAL_Z_MEASUREMENT_INDICES]
+
     _append_parity_conditioned_logical_correction(
         circuit,
         data,
-        bits[4:7],
+        logical_measurement_bits,
         correction="s" if gate == "t" else "sdg",
     )
 
@@ -989,7 +993,14 @@ def build_steane_physical_circuit_from_logical(
         magic_measure,
     ):
         circuit.add_register(register)
-    magic_measure_bits = [*magic_measure_rest, *magic_measure]
+    magic_measure_remainder = iter(magic_measure_rest)
+    magic_measure_logical = iter(magic_measure)
+    magic_measure_bits = [
+        next(magic_measure_logical)
+        if index in STEANE_LOGICAL_Z_MEASUREMENT_INDICES
+        else next(magic_measure_remainder)
+        for index in range(STEANE_BLOCK_SIZE)
+    ]
 
     readout_bits_by_clbit = {}
     readout_metadata = []

@@ -21,6 +21,9 @@ and R. Rines, B. Hall, M. H. Teo, J. Viszlai, D. C. Cole, D. Mason, C. Barker, e
 
 
 
+In the Compilation folder, you can find multiple notebooks showcasing our work for this project. The file "shor_15_initial_compilation.ipynb" shows how we compiled Shor's Algorithm circuit initially, to reduce as many gates as possible and simplify the unencoded circuit prior to error correction. The file "shor_15_steane_encoding.ipynb" walks through the process of error correcting the algorithm's circuit via the Steane Code. This includes creating a magic state factory and injecting magic states into the circuit in order to run a universal logical gateset. The "shor_15_final_compilation.ipynb" file walks through how we then took that error corrected circuit and compiled it down to the native gateset of Quantinuum's device, in order to determine a resource estimate for both the time and gates needed to run an entire Shor's Algorithm factoring for N=15 and a=11 on their device. Finally, in the Simluation folder, the file "shor_15_simulation.ipynb" simulates a simplified circuit with the same capability, but precompiled due to the fact that we actually know the period we need. This way, we can see how the circuit can actually factor the number 15. 
+
+
 Ultimately, throughout the initial compiled circuit, we remained committed to not "cheating" the circuit by using any tricks that arise solely from actually 
 knowing the factors or the period. This manifested itself in a pretty complicated circuit that accomplishes a fairly trivial task, showcasing just how much work
 overhead goes into encoding a universal set of gates into a simple error correcting code. It was quite a humbling and fun process, and taught us a lot about why so much effort is
